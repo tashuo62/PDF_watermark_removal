@@ -1,0 +1,44 @@
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.fade-in { animation: fadeIn 0.5s ease-in; }
+.dragover { border-color: #10b981; background-color: #ecfdf5; }
+#preview-modal {
+    position: fixed;
+    top: 0;
+    right: -50%;
+    width: 50%;
+    height: 100%;
+    background: white;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease-in-out;
+    z-index: 10;
+}
+#preview-modal.open { right: 0; }
+.section { @apply bg-white p-6 rounded-lg shadow-md mb-6; }
+#progress-bar {
+    width: 100%;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 0.625rem;
+    overflow: hidden;
+    position: relative;
+}
+#progress {
+    height: 100%;
+    background-color: #3b82f6;
+    border-radius: 9999px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem; /* Tailwind 的 gap-4 */
+}
+@media (min-width: 640px) {
+    .button-container {
+        flex-direction: row;
+    }
+}

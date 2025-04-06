@@ -3,9 +3,9 @@
 这是一个基于 Flask 的 Web 应用，用户可以上传带水印的 PDF 文件，系统会通过图像处理算法去除水印，并提供预览与下载功能。
 
 
-![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20155608.png)
-![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20155628.png)
-![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20155641.png)
+![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20191926.png)
+![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20192021.png)
+![描述](https://github.com/tashuo62/blog_img/blob/main/img/2025-04-06%20192041.png)
 
 ---
 

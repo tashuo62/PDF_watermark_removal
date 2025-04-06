@@ -3,242 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watermark Removal App</title>
-    <!-- Tailwind CSS CDN -->
+    <title>PDF Watermark Removal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 自定义动画 */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        /* 拖放区域高亮 */
-        .dragover {
-            border-color: #10b981;
-            background-color: #ecfdf5;
-        }
-        /* 预览窗口样式 */
-        #preview-modal {
-            position: fixed;
-            top: 0;
-            right: -50%;
-            width: 50%;
-            height: 100%;
-            background: white;
-            box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
-            transition: right 0.3s ease-in-out;
-            z-index: 10;
-        }
-        #preview-modal.open {
-            right: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl grid grid-cols-1 gap-6">
-        <h1 class="text-2xl font-bold text-center text-gray-800">PDF去水印</h1>
-
-        <!-- 拖放和文件选择区域 -->
-        <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-             ondragover="event.preventDefault(); this.classList.add('dragover');"
-             ondragleave="this.classList.remove('dragover');"
-             ondrop="event.preventDefault(); this.classList.remove('dragover'); handleDrop(event);">
-            <p class="text-gray-500">拖放 PDF 文件到此处，或</p>
-            <input type="file" id="file-input" accept=".pdf" class="hidden">
-            <button id="select-file-btn" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">选择文件</button>
+    <div class="w-full max-w-3xl space-y-6">
+        <div class="section text-center">
+            <h1 class="text-3xl font-bold text-gray-800">PDF去水印工具</h1>
+            <p class="text-gray-600 mt-2">快速移除PDF文件中的水印</p>
         </div>
 
-        <!-- 操作按钮区域 -->
-        <!-- 操作按钮区域 -->
-        <div class="flex flex-col sm:flex-row sm:justify-center gap-6">
-            <!-- 处理按钮和清除按钮 -->
-            <div class="flex flex-col sm:flex-row gap-4 sm:gap-8 w-full sm:w-auto justify-center">
-                <button id="process-btn" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-full sm:w-48" disabled>处理</button>
-                <button id="clear-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors w-full sm:w-48" disabled>清除</button>
+        <div class="section">
+            <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <p class="text-gray-500 mb-4">拖放 PDF 文件到此处，或</p>
+                <input type="file" id="file-input" accept=".pdf" class="hidden">
+                <button id="select-file-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">选择文件</button>
             </div>
-            <!-- 预览按钮 -->
-            <div class="flex justify-center w-full sm:w-auto">
-                <button id="preview-btn" class="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors w-full sm:w-48 hidden">预览</button>
+            <p id="selected-file" class="text-gray-600 mt-2 text-center hidden"></p>
+        </div>
+
+        <div class="section">
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <div class="flex justify-center gap-4">
+                    <button id="process-btn" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" disabled>处理</button>
+                    <button id="clear-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors" disabled>清除</button>
+                </div>
+                <button id="preview-btn" class="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors hidden">预览</button>
             </div>
+            <div id="progress-bar" class="w-full bg-gray-200 rounded-full h-2.5 mt-4 hidden">
+                <div id="progress" class="bg-blue-500 h-2.5 rounded-full"></div>
+            </div>
+            <p id="message" class="text-center text-gray-600 mt-4"></p>
+            <a id="download-link" href="/download" download class="hidden block text-center px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors mt-4">下载处理后的 PDF</a>
         </div>
 
-
-        <!-- 进度条 -->
-        <div id="progress-bar" class="w-full bg-gray-200 rounded-full h-2.5 hidden">
-            <div id="progress" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+        <div id="preview-modal" class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">文件预览</h2>
+                <button id="close-preview-btn" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            <iframe id="pdf-preview" class="w-full h-[calc(100%-4rem)] border rounded-lg"></iframe>
         </div>
-
-        <!-- 状态消息 -->
-        <p id="message" class="text-center text-gray-600">{{ message }}</p>
-
-        <!-- 下载链接 -->
-        <a id="download-link" href="/download" download class="hidden text-center px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors">下载处理后的 PDF</a>
     </div>
 
-    <!-- 预览窗口 -->
-    <div id="preview-modal" class="p-4">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">文件预览</h2>
-            <button id="close-preview-btn" class="text-gray-500 hover:text-gray-700">×</button>
-        </div>
-<!--        <iframe id="pdf-preview" class="w-full h-[calc(100%-4rem)] border rounded-lg"></iframe>-->
-        <iframe id="pdf-preview" class="w-full h-[calc(100%-4rem)] border rounded-lg"></iframe>
-    </div>
-
-    <script>
-        const fileInput = document.getElementById('file-input');
-        const selectFileBtn = document.getElementById('select-file-btn');
-        const processBtn = document.getElementById('process-btn');
-        const previewBtn = document.getElementById('preview-btn');
-        const clearBtn = document.getElementById('clear-btn');
-        const message = document.getElementById('message');
-        const downloadLink = document.getElementById('download-link');
-        const progressBar = document.getElementById('progress-bar');
-        const progress = document.getElementById('progress');
-        const previewModal = document.getElementById('preview-modal');
-        const pdfPreview = document.getElementById('pdf-preview');
-        const closePreviewBtn = document.getElementById('close-preview-btn');
-
-        let previewUrl = null;
-        let processed = false;
-
-        // 点击选择文件按钮触发文件输入
-        selectFileBtn.addEventListener('click', () => fileInput.click());
-
-        // 文件选择后更新按钮状态
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                if (file.type === 'application/pdf') {
-                    processBtn.disabled = false;
-                    clearBtn.disabled = false;
-                    processBtn.textContent = '处理';
-                    message.textContent = '已选择文件，点击处理';
-                    previewUrl = URL.createObjectURL(file);
-                } else {
-                    message.textContent = '请选择一个 PDF 文件';
-                    resetState();
-                }
-            } else {
-                resetState();
-            }
-        });
-
-        // 处理拖放文件
-        function handleDrop(event) {
-            const files = event.dataTransfer.files;
-            if (files.length > 0 && files[0].type === 'application/pdf') {
-                fileInput.files = files;
-                processBtn.disabled = false;
-                clearBtn.disabled = false;
-                processBtn.textContent = '处理';
-                message.textContent = '已选择文件，点击处理';
-                previewUrl = URL.createObjectURL(files[0]);
-            } else {
-                message.textContent = '请拖放一个 PDF 文件';
-                resetState();
-            }
-        }
-
-        // 处理（上传 + 去除水印）
-        processBtn.addEventListener('click', async () => {
-            if (!fileInput.files.length) return;
-
-            processBtn.disabled = true;
-            processBtn.textContent = '处理中...';
-            progressBar.classList.remove('hidden');
-            progress.style.width = '0%';
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            try {
-                // 上传文件
-                const uploadResponse = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const uploadText = await uploadResponse.text();
-                if (!uploadText.includes('文件上传成功')) {
-                    message.textContent = '上传失败';
-                    progressBar.classList.add('hidden');
-                    processBtn.disabled = false;
-                    processBtn.textContent = '处理';
-                    return;
-                }
-
-                // 更新进度到 50%
-                progress.style.width = '50%';
-                message.textContent = '文件上传成功，正在去除水印...';
-
-                // 去除水印
-                const removeResponse = await fetch('/remove_watermark');
-                const removeText = await removeResponse.text();
-                if (removeText.includes('水印去除成功')) {
-                    processBtn.textContent = '已处理';
-                    message.textContent = '水印去除成功';
-                    progress.style.width = '100%';
-                    downloadLink.classList.remove('hidden');
-                    downloadLink.classList.add('fade-in');
-                    previewBtn.classList.remove('hidden');
-                    previewBtn.classList.add('fade-in');
-                    processed = true;
-                    setTimeout(() => progressBar.classList.add('hidden'), 500);
-                } else {
-                    message.textContent = '水印去除失败';
-                    progressBar.classList.add('hidden');
-                }
-            } catch (error) {
-                console.error('Error during processing:', error);
-                message.textContent = '处理出错';
-                progressBar.classList.add('hidden');
-                processBtn.disabled = false;
-                processBtn.textContent = '处理';
-            }
-        });
-
-        // 预览文件
-        previewBtn.addEventListener('click', () => {
-            event.preventDefault();  // 防止下载链接被触发
-            if (processed) {
-                pdfPreview.src = '/preview';
-                previewModal.classList.add('open');
-            }
-        });
-
-        // 关闭预览窗口
-        closePreviewBtn.addEventListener('click', () => {
-            previewModal.classList.remove('open');
-        });
-
-        // 清除功能
-        clearBtn.addEventListener('click', () => {
-            resetState();
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-                previewUrl = null;
-            }
-            previewModal.classList.remove('open');
-            message.textContent = '已清除文件';
-        });
-
-        // 重置状态函数
-        function resetState() {
-            fileInput.value = '';
-            processBtn.disabled = true;
-            previewBtn.disabled = true;
-            previewBtn.classList.add('hidden');
-            clearBtn.disabled = true;
-            processBtn.textContent = '处理';
-            downloadLink.classList.add('hidden');
-            downloadLink.classList.remove('fade-in');
-            progressBar.classList.add('hidden');
-            progress.style.width = '0%';
-            processed = false;
-        }
-    </script>
+    <script src="{{ url_for('static', filename='index.js') }}" defer></script>
 </body>
 </html>
