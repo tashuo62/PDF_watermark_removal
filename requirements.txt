@@ -1,0 +1,6 @@
+flask
+pymupdf
+opencv-python
+numpy
+Pillow
+reportlab
